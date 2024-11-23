@@ -6,7 +6,7 @@ import datetime
 import csv
 from fastapi.responses import StreamingResponse
 from io import StringIO
-from fastapi import HTTPException
+# from fastapi import HTTPException
 
 
 router = APIRouter()
@@ -101,12 +101,12 @@ class GetCSVDetails(BaseModel):
     department:str
     type:str
 
-class DeleteRequest(BaseModel):
-    email: str
-    password: str
-    department: str
-    type: str
-    entry_id: str
+# class DeleteRequest(BaseModel):
+#     email: str
+#     password: str
+#     department: str
+#     type: str
+#     entry_id: str
 
 
 # Register endpoint with Pydantic model
@@ -363,37 +363,37 @@ async def export_csv(request: GetCSVDetails, res: Response):
         response.headers["Content-Disposition"] = "attachment; filename=order_details.csv"
         return response
 
-@router.delete("/delete_entry")
-async def delete_entry(request: DeleteRequest, res: Response):
-    res.headers.append("Access-Control-Allow-Origin", "*")
+# @router.delete("/delete_entry")
+# async def delete_entry(request: DeleteRequest, res: Response):
+#     res.headers.append("Access-Control-Allow-Origin", "*")
     
-    # Verify user credentials
-    user = Inventory.find_one({
-        "email": request.email,
-        "password": request.password
-    })
+#     # Verify user credentials
+#     user = Inventory.find_one({
+#         "email": request.email,
+#         "password": request.password
+#     })
     
-    if user is None:
-        res.status_code = 404
-        return {"message": "User not found"}
+#     if user is None:
+#         res.status_code = 404
+#         return {"message": "User not found"}
     
-    # Convert entry_id to ObjectId
-    try:
-        entry_id = ObjectId(request.entry_id)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail="Invalid entry ID format")
+#     # Convert entry_id to ObjectId
+#     try:
+#         entry_id = ObjectId(request.entry_id)
+#     except Exception as e:
+#         raise HTTPException(status_code=400, detail="Invalid entry ID format")
 
-    # Delete the record
-    result = Order_Details.delete_one({
-        "_id": entry_id,
-        "department": request.department,
-        "type": request.type,
-        "ordered_by": request.email
-    })
+#     # Delete the record
+#     result = Order_Details.delete_one({
+#         "_id": entry_id,
+#         "department": request.department,
+#         "type": request.type,
+#         "ordered_by": request.email
+#     })
     
-    if result.deleted_count == 0:
-        res.status_code = 404
-        return {"message": "Entry not found or unauthorized deletion attempt"}
+#     if result.deleted_count == 0:
+#         res.status_code = 404
+#         return {"message": "Entry not found or unauthorized deletion attempt"}
     
-    res.status_code = 200
-    return {"message": "Entry deleted successfully"}
+#     res.status_code = 200
+#     return {"message": "Entry deleted successfully"}
