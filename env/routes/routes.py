@@ -138,7 +138,7 @@ async def login(request: LoginRequest, res: Response):
     })
     if new_email is None:
         res.status_code = 404
-        return {"message": "User not found"}
+        return {"message": "Please check your email and password"}
     else:
         res.status_code = 200
         Login_Time.insert_one({
@@ -347,7 +347,7 @@ async def export_csv(request: GetCSVDetails, res: Response):
             writer.writerow([
                 
                 detail.get("name"),
-                detail.get("grade") or detail.get("type_of_aids") or detail.get("company_specification") or "",
+                detail.get("grade") or detail.get("type_of_aids") or detail.get("company_specification") or detail.get("capacity")or detail.get("warranty"),
                 detail.get("rate", ""),
                 detail.get("quantity", ""),
                 detail.get("total_cost", ""),
@@ -363,6 +363,53 @@ async def export_csv(request: GetCSVDetails, res: Response):
         response.headers["Content-Disposition"] = "attachment; filename=order_details.csv"
         return response
 
+
+@router.post("/software_export_csv")
+async def export_csv(request: GetCSVDetails, res: Response):
+    res.headers.append("Access-Control-Allow-Origin", "*")
+    
+    user = Inventory.find_one({
+        "email": request.email,
+        "password": request.password
+    })
+    
+    if user is None:
+        res.status_code = 404
+        return {"message": "User not found"}
+    else:
+        # Fetch the order details based on the department, type, and email
+        details = Order_Details.find({
+            "department": request.department,
+            "type": request.type,
+            "ordered_by": request.email
+        }, {"_id": 0})
+        
+        # Create a StringIO object to store CSV data
+        csv_buffer = StringIO()
+        writer = csv.writer(csv_buffer)
+
+        # Write the header for the CSV file
+        writer.writerow(["Name", "company_specification", "Total Cost", 
+                         "Discounted Cost", "Date of Order", "Date of Delivery", "Remarks"])
+
+        # Write each detail to the CSV
+        for detail in details:
+            writer.writerow([
+                
+                detail.get("name"),
+                detail.get("grade") or detail.get("type_of_aids") or detail.get("company_specification") or detail.get("capacity")or detail.get("warranty"),
+                detail.get("total_cost", ""),
+                detail.get("discounted_cost", ""),
+                detail.get("date_of_order").strftime('%Y-%m-%d') if detail.get("date_of_order") else "",
+                detail.get("date_of_delivery").strftime('%Y-%m-%d') if detail.get("date_of_delivery") else "",
+                detail.get("remarks", "")
+            ])
+
+        # Set up the response for the CSV file download
+        csv_buffer.seek(0)
+        response = StreamingResponse(csv_buffer, media_type="text/csv")
+        response.headers["Content-Disposition"] = "attachment; filename=order_details.csv"
+        return response
 # @router.delete("/delete_entry")
 # async def delete_entry(request: DeleteRequest, res: Response):
 #     res.headers.append("Access-Control-Allow-Origin", "*")
